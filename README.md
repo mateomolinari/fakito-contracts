@@ -1,5 +1,7 @@
 # Fakito's Interactive Collection
 
+:warning: **This project is under development**
+
 This project consist of a ERC1155 Contract which allows to store and modify custom URIs for each token.
 It works on top of a UUPS proxy pattern to allow to add further modifying logics. ERC1155 and UUPS contracts from OpenZeppelin are being used.
 
