@@ -125,12 +125,12 @@ contract Fakito is
 
     // Overriding `_afterTokenTransfer` to update modified status after transfer
     function _afterTokenTransfer(
-        address operator,
-        address from,
-        address to,
+        address,
+        address,
+        address,
         uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
+        uint256[] memory,
+        bytes memory
     ) internal override {
         Piece storage piece = pieces[ids[0]];
         if (piece.isModifiable) {
