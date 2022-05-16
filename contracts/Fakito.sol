@@ -115,10 +115,27 @@ contract Fakito is
         // }
 
     }
-
+    
+    // Overriding `uri` to return custom uris for each piece
     function uri(uint256 tokenId) public view virtual override returns (string memory) {
+        require(tokenId <= tokenCounter, "token does not exist");
         Piece storage piece = pieces[tokenId];
         return piece.uri;
+    }
+
+    // Overriding `_afterTokenTransfer` to update modified status after transfer
+    function _afterTokenTransfer(
+        address operator,
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) internal override {
+        Piece storage piece = pieces[ids[0]];
+        if (piece.isModifiable) {
+            piece.ownerHasModified = false;
+        }
     }
 
     function _authorizeUpgrade(address newImplementation)
