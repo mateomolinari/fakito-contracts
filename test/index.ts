@@ -103,7 +103,7 @@ describe("Fakito", function () {
       const testInstance = new ethers.Contract(
         instance.address,
         ABI.abi,
-        account[1]
+        account[15]
       );
       await expect(testInstance.modifyNFT(1, "newuri")).to.be.revertedWith(
         "not allowed to modify this nft"

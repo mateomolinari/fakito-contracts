@@ -7,7 +7,13 @@ A token may be modifiable or not. As of now, only one modifying mechanism is imp
 
 ERC1155 has been chosen since Fakito is looking to mint both 1/1 and multiple amount tokens.
 
-Run for unit testing:
+Set-up with: 
+
+```shell
+npm install 
+```
+
+Run tests with:
 
 ```shell
 npx hardhat test
