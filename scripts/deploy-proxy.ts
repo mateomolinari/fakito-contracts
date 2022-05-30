@@ -1,10 +1,10 @@
 import { ethers, upgrades } from "hardhat";
 
 async function main() {
-  const admin = "0x2546bcd3c84621e976d8185a91a922ae77ecec30";
+  const fakito = "0x31B277042AAa8c45A5Cb47fD2188cAD0f8e95f95";
 
   const Fakito = await ethers.getContractFactory("Fakito");
-  const instance = await upgrades.deployProxy(Fakito, [admin], {
+  const instance = await upgrades.deployProxy(Fakito, [fakito], {
     kind: "uups",
   });
 

@@ -7,28 +7,24 @@ const ABI = require("../artifacts/contracts/Fakito.sol/Fakito.json");
 
 describe("Fakito", function () {
   // eslint-disable-next-line no-unused-vars
-  let instance: Contract, admin: any;
+  let instance: Contract, fakito: any, fakitoInstance: Contract;
 
   beforeEach(async function () {
-    [admin] = await ethers.getSigners();
+    [fakito] = await ethers.getSigners();
 
     const Fakito = await ethers.getContractFactory("Fakito");
-    instance = await upgrades.deployProxy(Fakito, [admin.address], {
+    instance = await upgrades.deployProxy(Fakito, [fakito.address], {
       kind: "uups",
     });
     await instance.deployed();
+
+    fakitoInstance = new ethers.Contract(instance.address, ABI.abi, fakito);
   });
   describe("Upgrading", function () {
     it("Admin should be able to upgrade", async function () {
-      const adminInstance = new ethers.Contract(
-        instance.address,
-        ABI.abi,
-        admin
-      );
       const FakitoV2 = await ethers.getContractFactory("Fakito");
       const instance2 = await FakitoV2.deploy();
-      await expect(adminInstance.upgradeTo(instance2.address)).to.not.be
-        .reverted;
+      await expect(instance.upgradeTo(instance2.address)).to.not.be.reverted;
     });
     it("Non-admin should not be able to upgrade", async function () {
       const account = await ethers.getSigners();
@@ -44,8 +40,8 @@ describe("Fakito", function () {
   });
   describe("Minting", function () {
     it("Fakito should be able to mint", async function () {
-      await expect(instance.mint(1, 1, "link1", true, "oncePerOwner")).to.not.be
-        .reverted;
+      await expect(fakitoInstance.safeMint("link1", "OncePerOwner", 1)).to.not
+        .be.reverted;
     });
     it("Nobody else should be able to mint", async function () {
       const account = await ethers.getSigners();
@@ -53,51 +49,44 @@ describe("Fakito", function () {
       const testInstance = new ethers.Contract(
         instance.address,
         ABI.abi,
-        account[1]
+        account[3]
       );
       await expect(
-        testInstance.mint(1, 1, "link1", true, "oncePerOwner")
+        testInstance.safeMint("link1", "OncePerOwner", true)
       ).to.be.revertedWith(
-        `AccessControl: account ${account[1].address.toLowerCase()} is missing role 0xe31d31cdc4f3066becd587227a60ad50dbbf9ff24edec2103c2fc090a31d20e9`
+        `AccessControl: account ${account[3].address.toLowerCase()} is missing role 0xe31d31cdc4f3066becd587227a60ad50dbbf9ff24edec2103c2fc090a31d20e9`
       );
-    });
-    it("Should fail on minting with used id", async function () {
-      await instance.mint(1, 15, "link1", false, "none");
-
-      await expect(
-        instance.mint(1, 1, "link1", true, "oncePerOwner")
-      ).to.be.revertedWith("token id not available");
     });
   });
 
   describe("URI", function () {
     it("Should retrieve custom URI", async function () {
-      await instance.mint(1, 20, "link1", false, "none");
-      await instance.mint(2, 1, "link2", true, "oncePerOwner");
+      await fakitoInstance.safeMint("link1", "none", false);
+      await fakitoInstance.safeMint("link2", "OncePerOwner", true);
 
-      expect(await instance.uri(1)).to.equal("link1");
-      expect(await instance.uri(2)).to.equal("link2");
+      expect(await fakitoInstance.tokenURI(0)).to.equal("link1");
+      expect(await fakitoInstance.tokenURI(1)).to.equal("link2");
     });
     it("Should fail on non-existent token", async function () {
-      await expect(instance.uri(3)).to.be.revertedWith("token does not exist");
+      await expect(fakitoInstance.tokenURI(3)).to.be.reverted;
     });
   });
 
   describe("Modifying URIs", function () {
     it("Should revert on immutable token", async function () {
-      await instance.mint(1, 20, "link1", false, "none");
+      await fakitoInstance.safeMint("link1", "none", false);
 
-      await expect(instance.modifyNFT(1, "newuri")).to.be.revertedWith(
+      await expect(fakitoInstance.modifyNFT(0, "newuri")).to.be.revertedWith(
         "immutable token"
       );
     });
     it("Owner should be able to modify", async function () {
-      await instance.mint(1, 1, "initial", false, "oncePerOwner");
+      await fakitoInstance.safeMint("initial", "OncePerOwner", true);
 
-      await expect(instance.modifyNFT(1, "newuri")).to.not.be.revertedWith;
+      await expect(fakitoInstance.modifyNFT(0, "newuri")).to.not.be.reverted;
     });
     it("Non-owner should not be able to modify", async function () {
-      await instance.mint(1, 1, "initial", true, "oncePerOwner");
+      await fakitoInstance.safeMint("initial", "OncePerOwner", true);
       const account = await ethers.getSigners();
 
       const testInstance = new ethers.Contract(
@@ -105,23 +94,21 @@ describe("Fakito", function () {
         ABI.abi,
         account[15]
       );
-      await expect(testInstance.modifyNFT(1, "newuri")).to.be.revertedWith(
-        "not allowed to modify this nft"
+      await expect(testInstance.modifyNFT(0, "newuri")).to.be.revertedWith(
+        "not owner"
       );
     });
     it("Should retrieve new uri", async function () {
-      await instance.mint(1, 1, "initial", true, "oncePerOwner");
-      await instance.modifyNFT(1, "newuri");
+      await fakitoInstance.safeMint("initial", "OncePerOwner", true);
+      await fakitoInstance.modifyNFT(0, "newuri");
 
-      expect(await instance.uri(1)).to.be.equal("newuri");
+      expect(await instance.tokenURI(0)).to.be.equal("newuri");
     });
     it("Should not allow to modify twice by same owner", async function () {
-      await instance.mint(1, 1, "initial", true, "oncePerOwner");
-      await instance.modifyNFT(1, "newuri");
+      await fakitoInstance.safeMint("initial", "OncePerOwner", true);
+      await fakitoInstance.modifyNFT(0, "newuri");
 
-      await expect(instance.modifyNFT(1, "seconduri")).to.be.revertedWith(
-        "already modified"
-      );
+      await expect(fakitoInstance.modifyNFT(0, "seconduri")).to.be.reverted;
     });
   });
 });

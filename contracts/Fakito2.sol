@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
-contract Fakito is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
+contract Fakito2 is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     bytes32 public constant FAKITO = keccak256("FAKITO");
@@ -56,6 +56,9 @@ contract Fakito is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable
         if (piece.modifyingMechanism == bytes4(keccak256(abi.encodePacked("OncePerOwner")))) {
             require(!piece.ownerHasModified, "already modified");
             piece.ownerHasModified = true;
+            _setTokenURI(id, newuri);
+        } else if (piece.modifyingMechanism == bytes4(keccak256(abi.encodePacked("RotatingModifier")))) {
+            // testing upgradeability
             _setTokenURI(id, newuri);
         }
     }
