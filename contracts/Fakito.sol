@@ -8,14 +8,22 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
+/// @title Fakito's Interactive Collection
+/// @author mmolinari.eth
+/// @dev Simple ERC721URIStorage which allows to individually modify each tokens
+/// uri through different modifying mechanisms
+
 contract Fakito is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable, AccessControlUpgradeable, UUPSUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
-    bytes32 public constant FAKITO = keccak256("FAKITO");
     CountersUpgradeable.Counter private _tokenIdCounter;
+    bytes32 public constant FAKITO = keccak256("FAKITO");
     bytes32 public constant ADMIN = keccak256("ADMIN");
+    
+    // mapping of token ids to Piece
     mapping(uint256 => Piece) internal pieces;
 
+    // struct holding the modifying information for a token
     struct Piece {
         bool modifiable;
         bool ownerHasModified;
@@ -27,6 +35,7 @@ contract Fakito is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable
         _disableInitializers();
     }
 
+    // initializing contract with Fakito as the only minter 
     function initialize(address _fakito) public initializer {
         __ERC721_init("Fakito", "FKT");
         __ERC721URIStorage_init();
@@ -37,6 +46,7 @@ contract Fakito is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable
         _grantRole(ADMIN, msg.sender);
     }
 
+    // simple mint and Piece object instantiation
     function safeMint(string memory uri, string memory mechanism, bool isModifiable) public onlyRole(FAKITO) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
@@ -49,6 +59,7 @@ contract Fakito is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable
         );
     }
 
+    // main upgrades will happen on this function, adding modifying logic to the if/else chain
     function modifyNFT(uint256 id, string memory newuri) public {
         require(ownerOf(id) == msg.sender, "not owner");
         Piece storage piece = pieces[id];
@@ -66,6 +77,7 @@ contract Fakito is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable
         override
     {}
 
+    // in case something goes wrong and we need to force a migration
     function emergencyBurn(uint256[] memory tokenIds) public onlyRole(FAKITO) {
         uint256 length = tokenIds.length;
         for (uint i; i < length;) {
@@ -76,6 +88,7 @@ contract Fakito is Initializable, ERC721Upgradeable, ERC721URIStorageUpgradeable
         }
     }
 
+    // resetting properties after transfer
     function _afterTokenTransfer(
         address,
         address,
