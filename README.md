@@ -20,3 +20,6 @@ Run tests with:
 ```shell
 npx hardhat test
 ```
+
+Deployed on Rinkeby:
+https://rinkeby.etherscan.io/address/0xF510cb87dCDCe6869B867E4c6CE027585D45779e
